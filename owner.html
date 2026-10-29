@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Owner - D3SAN Resto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- FIREBASE SDK v10 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBnM4ZAzcSk3jTf7taMDlQCWCg4o_x-mxc",
+            authDomain: "menu-digital-remboelan.firebaseapp.com",
+            projectId: "menu-digital-remboelan",
+            storageBucket: "menu-digital-remboelan.firebasestorage.app",
+            messagingSenderId: "340444873649",
+            appId: "1:340444873649:web:3b6baa09bdbd9b79bdb390",
+            measurementId: "G-ZFYPD3R6KZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.setDoc = setDoc;
+        window.doc = doc;
+        window.onSnapshot = onSnapshot;
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        
+        .drop-zone {
+            border: 2px dashed #475569;
+            transition: all 0.2s ease;
+        }
+        .drop-zone.drag-over {
+            border-color: #f59e0b;
+            background-color: rgba(245, 158, 11, 0.1);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <!-- OVERLAY PIN OWNER -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+        <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div class="w-14 h-14 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold"><i class="fa-solid fa-crown"></i></div>
+            <h3 class="font-extrabold text-white text-lg">Panel Owner Utama</h3>
+            <input type="password" id="input-pin-owner" placeholder="Masukkan PIN Owner" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-center font-bold text-white outline-none">
+            <p id="pin-error" class="text-xs text-rose-400 font-semibold hidden">PIN Owner salah!</p>
+            <button onclick="verifyOwnerPin()" class="w-full py-3 bg-amber-500 text-slate-900 font-bold rounded-xl text-sm">Masuk Panel Owner</button>
+        </div>
+    </div>
+
+    <!-- MAIN OWNER PANEL -->
+    <div id="owner-content" class="max-w-4xl mx-auto space-y-6 hidden">
+        <header class="flex justify-between items-center pb-4 border-b border-slate-800">
+            <div>
+                <h1 class="font-extrabold text-xl text-white">Panel Owner / Pemilik Resto</h1>
+                <p class="text-xs text-slate-400">Kelola foto QRIS, logo, nama resto, & PIN keamanan</p>
+            </div>
+            <span class="px-3 py-1 bg-amber-500/20 text-amber-400 font-bold text-xs rounded-full">Owner Mode</span>
+        </header>
+
+        <!-- PENGATURAN LOGO & QRIS RESTO DENGAN DRAG & DROP FOTO -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 space-y-4">
+            <h3 class="font-bold text-amber-400 text-sm uppercase">1. Upload Gambar QRIS & Logo Usaha</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                
+                <!-- DROP ZONE QRIS -->
+                <div class="space-y-2">
+                    <label class="block text-slate-300 font-semibold">Foto Kode QRIS Resto</label>
+                    <div id="qris-drop-zone" class="drop-zone p-4 rounded-2xl bg-slate-900/60 text-center cursor-pointer hover:border-amber-500 flex flex-col items-center justify-center min-h-[160px] relative">
+                        <input type="file" id="qris-file-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="handleFileSelect(event, 'qris')">
+                        <div id="qris-preview-container" class="space-y-2 flex flex-col items-center">
+                            <i class="fa-solid fa-qrcode text-3xl text-amber-500"></i>
+                            <p class="font-semibold text-slate-300">Drag & Drop foto QRIS di sini</p>
+                            <span class="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-lg text-[11px] font-bold">atau Klik untuk Pilih File</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block mb-1">Atau gunakan URL Gambar (Opsional):</span>
+                        <input type="text" id="owner-qris-url" placeholder="https://..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                    </div>
+                </div>
+
+                <!-- DROP ZONE LOGO RESTO -->
+                <div class="space-y-2">
+                    <label class="block text-slate-300 font-semibold">Foto Logo Restoran</label>
+                    <div id="logo-drop-zone" class="drop-zone p-4 rounded-2xl bg-slate-900/60 text-center cursor-pointer hover:border-amber-500 flex flex-col items-center justify-center min-h-[160px] relative">
+                        <input type="file" id="logo-file-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="handleFileSelect(event, 'logo')">
+                        <div id="logo-preview-container" class="space-y-2 flex flex-col items-center">
+                            <i class="fa-solid fa-image text-3xl text-amber-500"></i>
+                            <p class="font-semibold text-slate-300">Drag & Drop logo resto di sini</p>
+                            <span class="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-lg text-[11px] font-bold">atau Klik untuk Pilih File</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block mb-1">Atau gunakan URL Gambar (Opsional):</span>
+                        <input type="text" id="owner-logo-url" placeholder="https://..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PENGATURAN USANA & KATASANDI -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 space-y-4">
+            <h3 class="font-bold text-amber-400 text-sm uppercase">2. Nama Usaha & PIN Keamanan</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Nama Restoran</label>
+                    <input type="text" id="owner-resto-name" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">PIN Masuk Kasir</label>
+                    <input type="password" id="owner-cashier-pin" placeholder="Default: 1234" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">PIN Masuk Owner</label>
+                    <input type="password" id="owner-pin-new" placeholder="Default: 9999" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                </div>
+            </div>
+
+            <button onclick="saveOwnerConfig()" class="px-5 py-2.5 bg-amber-500 text-slate-900 font-bold rounded-xl text-xs shadow-lg hover:bg-amber-600 transition">Simpan Semua Pengaturan Owner</button>
+        </div>
+
+        <!-- KELOLA MENU MANAJEMEN -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 space-y-4">
+            <h3 class="font-bold text-white text-sm">3. Tambah / Edit / Hapus Menu Resto</h3>
+            <input type="hidden" id="edit-item-id">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Nama Menu *</label>
+                    <input type="text" id="menu-name" placeholder="Nasi Goreng" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Kategori *</label>
+                    <select id="menu-category" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                        <option value="Makanan Utama">Makanan Utama</option>
+                        <option value="Camilan">Camilan</option>
+                        <option value="Minuman">Minuman</option>
+                        <option value="Dessert">Dessert</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Harga (Rp) *</label>
+                    <input type="number" id="menu-price" placeholder="25000" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-slate-300 font-semibold mb-1">Deskripsi Menu</label>
+                    <input type="text" id="menu-desc" placeholder="Penjelasan singkat..." class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">URL Gambar Foto Menu</label>
+                    <input type="text" id="menu-img" placeholder="https://..." class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <button onclick="saveMenuItem()" id="btn-save-menu" class="px-5 py-2.5 bg-amber-500 text-slate-900 font-bold rounded-xl text-xs">+ Tambahkan Menu</button>
+                <button onclick="resetMenuForm()" id="btn-cancel-edit" class="px-4 py-2.5 bg-slate-700 text-slate-300 font-bold rounded-xl text-xs hidden">Batal Edit</button>
+            </div>
+
+            <div class="pt-4 border-t border-slate-700">
+                <h4 class="font-bold text-xs text-slate-300 mb-2">Daftar Menu Resto Saat Ini</h4>
+                <div id="admin-menu-list" class="divide-y divide-slate-700"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let menuItems = [];
+        let appConfig = {};
+
+        window.onload = function() { 
+            listenRealtimeAppData(); 
+            initDragAndDrop();
+        };
+
+        function verifyOwnerPin() {
+            const inputVal = document.getElementById('input-pin-owner').value;
+            if (inputVal === (appConfig.ownerPin || "9999")) {
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('owner-content').classList.remove('hidden');
+            } else {
+                document.getElementById('pin-error').classList.remove('hidden');
+            }
+        }
+
+        function listenRealtimeAppData() {
+            if (!window.db) { setTimeout(listenRealtimeAppData, 300); return; }
+            window.onSnapshot(window.doc(window.db, "restaurant", "appData"), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    menuItems = data.items || [];
+                    appConfig = data.config || {};
+                    
+                    document.getElementById('owner-resto-name').value = appConfig.restaurantName || "D3SAN Resto";
+                    document.getElementById('owner-qris-url').value = appConfig.qrisUrl || "";
+                    document.getElementById('owner-logo-url').value = appConfig.logoUrl || "";
+                    document.getElementById('owner-cashier-pin').value = appConfig.cashierPin || "1234";
+                    document.getElementById('owner-pin-new').value = appConfig.ownerPin || "9999";
+
+                    if (appConfig.qrisUrl) updatePreview('qris', appConfig.qrisUrl);
+                    if (appConfig.logoUrl) updatePreview('logo', appConfig.logoUrl);
+                }
+                renderAdminMenuList();
+            });
+        }
+
+        // FUNGSI INTI DRAG & DROP FOTO
+        function initDragAndDrop() {
+            ['qris', 'logo'].forEach(type => {
+                const dropZone = document.getElementById(`${type}-drop-zone`);
+                
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, preventDefaults, false);
+                });
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    if (files.length > 0) processFile(files[0], type);
+                }, false);
+            });
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleFileSelect(event, type) {
+            const file = event.target.files[0];
+            if (file) processFile(file, type);
+        }
+
+        function processFile(file, type) {
+            if (!file.type.startsWith('image/')) {
+                alert('File harus berupa foto/gambar (PNG, JPG, JPEG)!');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Img = e.target.result;
+                document.getElementById(`owner-${type}-url`).value = base64Img;
+                updatePreview(type, base64Img);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updatePreview(type, src) {
+            const container = document.getElementById(`${type}-preview-container`);
+            container.innerHTML = `
+                <img src="${src}" class="max-h-28 object-contain rounded-xl border border-slate-700 shadow-md mb-1">
+                <p class="text-[11px] text-amber-400 font-bold"><i class="fa-solid fa-circle-check"></i> Foto Terpasang (Klik/Drop untuk Ganti)</p>
+            `;
+        }
+
+        async function saveOwnerConfig() {
+            appConfig.restaurantName = document.getElementById('owner-resto-name').value.trim();
+            appConfig.qrisUrl = document.getElementById('owner-qris-url').value.trim();
+            appConfig.logoUrl = document.getElementById('owner-logo-url').value.trim();
+            appConfig.cashierPin = document.getElementById('owner-cashier-pin').value.trim() || "1234";
+            appConfig.ownerPin = document.getElementById('owner-pin-new').value.trim() || "9999";
+
+            await window.setDoc(window.doc(window.db, "restaurant", "appData"), {
+                config: appConfig,
+                items: menuItems
+            });
+
+            alert("Semua Pengaturan Owner (QRIS, Logo, PIN) berhasil disimpan ke Database!");
+        }
+
+        function renderAdminMenuList() {
+            const container = document.getElementById('admin-menu-list');
+            container.innerHTML = menuItems.map(item => `
+                <div class="py-2.5 flex justify-between items-center text-xs">
+                    <div>
+                        <p class="font-bold text-white">${item.name} <span class="text-amber-400 font-normal">(${item.category})</span></p>
+                        <p class="text-slate-400">Rp ${item.price.toLocaleString('id-ID')}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editMenu(${item.id})" class="px-2.5 py-1 bg-amber-500/20 text-amber-400 rounded-lg font-bold">Edit</button>
+                        <button onclick="deleteMenu(${item.id})" class="px-2.5 py-1 bg-rose-500/20 text-rose-400 rounded-lg font-bold">Hapus</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function saveMenuItem() {
+            const editId = document.getElementById('edit-item-id').value;
+            const name = document.getElementById('menu-name').value.trim();
+            const category = document.getElementById('menu-category').value;
+            const price = parseInt(document.getElementById('menu-price').value);
+            const desc = document.getElementById('menu-desc').value.trim();
+            let img = document.getElementById('menu-img').value.trim() || 'https://placehold.co/600x400?text=Menu';
+
+            if (!name || isNaN(price)) { alert("Isi Nama & Harga!"); return; }
+
+            if (editId) {
+                const idx = menuItems.findIndex(i => String(i.id) === String(editId));
+                if (idx !== -1) menuItems[idx] = { id: Number(editId), name, category, price, description: desc, image: img };
+            } else {
+                menuItems.push({ id: Date.now(), name, category, price, description: desc, image: img });
+            }
+
+            await window.setDoc(window.doc(window.db, "restaurant", "appData"), {
+                config: appConfig,
+                items: menuItems
+            });
+
+            resetMenuForm();
+            alert("Menu berhasil disimpan!");
+        }
+
+        function editMenu(id) {
+            const item = menuItems.find(i => String(i.id) === String(id));
+            if (!item) return;
+            document.getElementById('edit-item-id').value = item.id;
+            document.getElementById('menu-name').value = item.name;
+            document.getElementById('menu-category').value = item.category;
+            document.getElementById('menu-price').value = item.price;
+            document.getElementById('menu-desc').value = item.description || '';
+            document.getElementById('menu-img').value = item.image || '';
+
+            document.getElementById('btn-save-menu').innerText = "Simpan Perubahan";
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        }
+
+        function resetMenuForm() {
+            document.getElementById('edit-item-id').value = '';
+            document.getElementById('menu-name').value = '';
+            document.getElementById('menu-price').value = '';
+            document.getElementById('menu-desc').value = '';
+            document.getElementById('menu-img').value = '';
+            document.getElementById('btn-save-menu').innerText = "+ Tambahkan Menu";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function deleteMenu(id) {
+            if (confirm("Hapus menu ini?")) {
+                menuItems = menuItems.filter(i => String(i.id) !== String(id));
+                await window.setDoc(window.doc(window.db, "restaurant", "appData"), {
+                    config: appConfig,
+                    items: menuItems
+                });
+            }
+        }
+    </script>
+</body>
+</html>

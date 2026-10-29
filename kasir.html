@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Kasir - SerayaCoffee</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- FIREBASE SDK v10 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBnM4ZAzcSk3jTf7taMDlQCWCg4o_x-mxc",
+            authDomain: "menu-digital-remboelan.firebaseapp.com",
+            projectId: "menu-digital-remboelan",
+            storageBucket: "menu-digital-remboelan.firebasestorage.app",
+            messagingSenderId: "340444873649",
+            appId: "1:340444873649:web:3b6baa09bdbd9b79bdb390",
+            measurementId: "G-ZFYPD3R6KZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.setDoc = setDoc;
+        window.doc = doc;
+        window.onSnapshot = onSnapshot;
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #f8fafc; }
+
+        /* FORMAT STRUK PRINTER THERMAL 58MM ALA STRUK MIE GACOAN */
+        @media print {
+            @page { 
+                size: 58mm auto; 
+                margin: 0; 
+            }
+            body * { visibility: hidden !important; }
+            #printable-receipt, #printable-receipt * { visibility: visible !important; }
+            #printable-receipt {
+                display: block !important; 
+                position: absolute !important; 
+                left: 0 !important; 
+                top: 0 !important;
+                width: 58mm !important; 
+                padding: 3mm 4mm !important; 
+                color: #000000 !important; 
+                background: #ffffff !important;
+                font-family: 'Courier New', Courier, monospace !important;
+                font-size: 10px !important;
+                line-height: 1.2 !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <!-- OVERLAY LOGIN PIN KASIR -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+        <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div class="w-14 h-14 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold"><i class="fa-solid fa-lock"></i></div>
+            <h3 class="font-extrabold text-white text-lg">Akses Layar Kasir</h3>
+            <input type="password" id="input-pin" placeholder="Masukkan PIN Kasir" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-center font-bold text-white outline-none">
+            <p id="pin-error" class="text-xs text-rose-400 font-semibold hidden">PIN Kasir salah!</p>
+            <button onclick="verifyPin()" class="w-full py-3 bg-amber-500 text-slate-900 font-bold rounded-xl text-sm">Masuk Kasir</button>
+        </div>
+    </div>
+
+    <!-- MODAL PENGINGAT SUARA BEL KASIR -->
+    <div id="sound-reminder-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 p-6 rounded-3xl border border-amber-500/50 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div class="w-16 h-16 bg-amber-500 text-slate-900 rounded-2xl flex items-center justify-center mx-auto text-3xl font-extrabold animate-bounce">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <div>
+                <h3 class="font-extrabold text-white text-lg">Pengingat Bel Kasir!</h3>
+                <p class="text-xs text-slate-300 mt-1">Aktifkan suara sekarang agar kasir mendapat notifikasi suara otomatis saat pesanan baru masuk.</p>
+            </div>
+            <button onclick="confirmActivateSound()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-volume-high"></i> Aktifkan Bel Sekarang
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP PREVIEW BUKTI BAYAR FOTO KONSUMEN -->
+    <div id="proof-image-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 p-4 rounded-3xl border border-slate-700 max-w-sm w-full text-center space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h4 class="font-bold text-xs text-amber-400">Bukti Transfer QRIS Konsumen</h4>
+                <button onclick="closeProofModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <img id="modal-proof-img" class="max-h-80 w-full object-contain rounded-2xl border border-slate-700 bg-slate-900">
+            <button onclick="openFullImageInNewTab()" class="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 font-bold text-xs rounded-xl border border-amber-500/30">
+                <i class="fa-solid fa-up-right-from-square mr-1"></i> Buka Link Foto Full
+            </button>
+        </div>
+    </div>
+
+    <div id="dashboard-content" class="hidden">
+        <header class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-slate-900 flex items-center justify-center font-bold text-xl">
+                    <i class="fa-solid fa-cash-register"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg md:text-2xl text-white" id="disp-resto-name">Kasir POS</h1>
+                    <p class="text-xs text-slate-400">Sinkronisasi Real-Time Firestore</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="btn-sound-activate" onclick="playBeepSound()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg transition">
+                    <i class="fa-solid fa-volume-high"></i> <span>Aktifkan Bel & Suara</span>
+                </button>
+                <button onclick="switchTab('orders')" id="tab-btn-orders" class="px-3.5 py-2 bg-slate-700 text-white rounded-xl text-xs font-bold">Antrean Pesanan</button>
+                <button onclick="switchTab('admin')" id="tab-btn-admin" class="px-3.5 py-2 bg-slate-800 text-slate-400 rounded-xl text-xs font-bold hover:text-white">Kelola Menu</button>
+            </div>
+        </header>
+
+        <section class="max-w-7xl mx-auto my-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-users"></i></div>
+                <div><p class="text-xs text-slate-400 font-semibold">Pembeli Hari Ini</p><h3 class="text-2xl font-extrabold text-white" id="stat-buyers-today">0 Orang</h3></div>
+            </div>
+            
+            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg flex items-center gap-4">
+                <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-wallet"></i></div>
+                <div><p class="text-xs text-slate-400 font-semibold">Pendapatan Hari Ini</p><h3 class="text-2xl font-extrabold text-emerald-400" id="stat-income-today">Rp 0</h3></div>
+            </div>
+
+            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-amber-500/20 text-amber-400 rounded-lg flex items-center justify-center text-sm font-bold"><i class="fa-solid fa-fire"></i></div>
+                        <p class="text-xs text-slate-400 font-semibold">Terlaris (7 Hari)</p>
+                    </div>
+                    <select id="stat-top-category-filter" onchange="calculateStatistics()" class="bg-slate-900 text-amber-400 border border-slate-700 rounded-lg px-2 py-1 text-[11px] font-bold outline-none">
+                        <option value="Semua">Semua Kategori</option>
+                        <option value="Makanan Utama">Makanan Utama</option>
+                        <option value="Camilan">Camilan</option>
+                        <option value="Minuman">Minuman</option>
+                        <option value="Dessert">Dessert</option>
+                    </select>
+                </div>
+                <h3 class="text-base font-extrabold text-amber-400 truncate pt-1" id="stat-top-menu">-</h3>
+            </div>
+        </section>
+
+        <main id="view-orders" class="max-w-7xl mx-auto space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="font-bold text-base text-white flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-amber-500"></i> Antrean Pesanan Masuk
+                </h2>
+                <button onclick="clearFinishedOrders()" class="px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-bold text-xs">
+                    Bersihkan Status Selesai
+                </button>
+            </div>
+            <div id="cashier-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </main>
+
+        <main id="view-admin" class="max-w-7xl mx-auto space-y-6 hidden">
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 space-y-4">
+                <h3 class="font-bold text-amber-400 text-sm uppercase" id="form-menu-title">Tambah Menu Baru</h3>
+                <input type="hidden" id="edit-item-id">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Nama Menu *</label>
+                        <input type="text" id="menu-name" placeholder="Nasi Goreng" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Kategori *</label>
+                        <select id="menu-category" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                            <option value="Makanan Utama">Makanan Utama</option>
+                            <option value="Camilan">Camilan</option>
+                            <option value="Minuman">Minuman</option>
+                            <option value="Dessert">Dessert</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Harga (Rp) *</label>
+                        <input type="number" id="menu-price" placeholder="25000" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-slate-300 font-semibold mb-1">Deskripsi Menu</label>
+                        <input type="text" id="menu-desc" placeholder="Penjelasan singkat..." class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">URL Foto Gambar</label>
+                        <input type="text" id="menu-img" placeholder="https://..." class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none">
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveMenuItem()" id="btn-save-menu" class="px-5 py-2.5 bg-amber-500 text-slate-900 font-bold rounded-xl text-xs">+ Tambahkan Menu</button>
+                    <button onclick="resetMenuForm()" id="btn-cancel-edit" class="px-4 py-2.5 bg-slate-700 text-slate-300 font-bold rounded-xl text-xs hidden">Batal Edit</button>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 space-y-3">
+                <h3 class="font-bold text-white text-sm">Daftar Menu Saat Ini</h3>
+                <div id="admin-menu-list" class="divide-y divide-slate-700"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CONTAINER STRUK PRINTER THERMAL 58MM ALA STRUK MIE GACOAN -->
+    <div id="printable-receipt" class="hidden">
+        <div style="text-align: center; margin-bottom: 6px;">
+            <div id="receipt-logo-container" style="margin-bottom: 4px;"></div>
+            <h2 style="font-size: 13px; font-weight: bold; margin: 0; text-transform: uppercase;" id="receipt-resto-name">D3SAN RESTO</h2>
+            <p style="margin: 2px 0 0 0; font-size: 9px;">Jl. Perhubungan, Tembung, Kec. Percut Sei Tuan</p>
+            <p style="margin: 1px 0 0 0; font-size: 9px;">IG: @serayacoffee_</p>
+        </div>
+
+        <div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 4px 0; margin-bottom: 6px; font-size: 9.5px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 25%;">Date</td>
+                    <td style="width: 5%;">:</td>
+                    <td id="receipt-date">27-07-2026 10:02</td>
+                </tr>
+                <tr>
+                    <td>Info</td>
+                    <td>:</td>
+                    <td id="receipt-customer">Pelanggan</td>
+                </tr>
+                <tr>
+                    <td>Purpose</td>
+                    <td>:</td>
+                    <td id="receipt-type">TAKE AWAY</td>
+                </tr>
+                <tr>
+                    <td>Cashier</td>
+                    <td>:</td>
+                    <td>KASIR D3SAN</td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="receipt-items-list" style="border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 6px; font-size: 9.5px;"></div>
+
+        <div style="font-size: 9.5px; space-y-1;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                <span>Subtotal :</span>
+                <span id="receipt-subtotal-amount">Rp 0</span>
+            </div>
+            <div style="border-top: 1px dashed #000; padding-top: 4px; display: flex; justify-content: space-between; font-weight: bold; font-size: 11px;">
+                <span>Grand Total :</span>
+                <span id="receipt-grand-total">Rp 0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+                <span>Payment :</span>
+                <span id="receipt-payment-method">Tunai</span>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 10px; font-size: 9px; border-top: 1px dashed #000; padding-top: 6px;">
+            <p style="margin: 0; font-weight: bold;">TERIMA KASIH ATAS KUNJUNGAN ANDA</p>
+            <p style="margin: 2px 0 0 0;">~ SerayaCoffe POS System ~</p>
+        </div>
+    </div>
+
+    <script>
+        let cashierOrders = [];
+        let menuItems = [];
+        let restoName = "D3SAN Resto";
+        let appConfig = {};
+        let previousOrderCount = 0;
+        let isFirstLoad = true;
+        let currentActiveProofUrl = "";
+
+        window.onload = function() {
+            listenRealtimeAppData();
+            listenRealtimeOrders();
+        };
+
+        function verifyPin() {
+            const val = document.getElementById('input-pin').value;
+            if (val === (appConfig.cashierPin || "1234")) {
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+                document.getElementById('sound-reminder-modal').classList.remove('hidden');
+            } else {
+                document.getElementById('pin-error').classList.remove('hidden');
+            }
+        }
+
+        function confirmActivateSound() {
+            playBeepSound();
+            document.getElementById('sound-reminder-modal').classList.add('hidden');
+        }
+
+        function playBeepSound() {
+            try {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance("Ada pesanan masuk");
+                    u.lang = "id-ID";
+                    window.speechSynthesis.speak(u);
+                    document.getElementById('btn-sound-activate').className = "px-4 py-2 bg-emerald-500 text-slate-900 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg transition";
+                    document.getElementById('btn-sound-activate').innerHTML = `<i class="fa-solid fa-check"></i> <span>Bel Suara Aktif</span>`;
+                }
+            } catch(e) { console.log(e); }
+        }
+
+        function listenRealtimeAppData() {
+            if (!window.db) { setTimeout(listenRealtimeAppData, 300); return; }
+            window.onSnapshot(window.doc(window.db, "restaurant", "appData"), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    menuItems = data.items || [];
+                    appConfig = data.config || {};
+                    restoName = appConfig.restaurantName || restoName;
+                    document.getElementById('disp-resto-name').innerText = `Kasir - ${restoName}`;
+                }
+                renderAdminMenuList();
+                calculateStatistics();
+            });
+        }
+
+        function listenRealtimeOrders() {
+            if (!window.db) { setTimeout(listenRealtimeOrders, 300); return; }
+            window.onSnapshot(window.doc(window.db, "restaurant", "liveOrders"), (docSnap) => {
+                if (docSnap.exists()) {
+                    cashierOrders = docSnap.data().ordersList || [];
+                } else {
+                    cashierOrders = [];
+                }
+
+                if (!isFirstLoad && cashierOrders.length > previousOrderCount) {
+                    playBeepSound();
+                }
+                isFirstLoad = false;
+                previousOrderCount = cashierOrders.length;
+
+                renderOrders();
+                calculateStatistics();
+            });
+        }
+
+        function renderOrders() {
+            const grid = document.getElementById('cashier-orders-grid');
+            if (cashierOrders.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center py-12 text-slate-500">Belum ada pesanan masuk.</p>`;
+                return;
+            }
+
+            grid.innerHTML = cashierOrders.map(ord => {
+                let statusBadge = `<span class="bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded-full text-[10px]">⏳ Pending</span>`;
+                if (ord.status === 'Diproses') statusBadge = `<span class="bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full text-[10px]">🍳 Diproses</span>`;
+                else if (ord.status === 'Selesai') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full text-[10px]">✅ Selesai</span>`;
+
+                let itemsHtml = ord.items.map(i => {
+                    const m = menuItems.find(x => String(x.id) === String(i.id));
+                    return `<div class="flex justify-between text-xs"><span>${m ? m.name : 'Item'} (x${i.qty})</span><span class="font-bold">Rp ${((m ? m.price : 0) * i.qty).toLocaleString('id-ID')}</span></div>`;
+                }).join('');
+
+                let proofBtnHtml = '';
+                if (ord.paymentProofUrl) {
+                    proofBtnHtml = `
+                        <button onclick="viewProofModal('${ord.paymentProofUrl}')" class="py-1.5 px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 w-full">
+                            <i class="fa-solid fa-camera"></i> 📷 Lihat Bukti Bayar
+                        </button>
+                    `;
+                }
+
+                return `
+                    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col justify-between space-y-3">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start border-b border-slate-700 pb-2">
+                                <div>
+                                    <span class="font-extrabold text-white text-xs">#${ord.orderId}</span>
+                                    <p class="text-[10px] text-slate-400">${ord.time}</p>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            <p class="text-xs font-bold text-amber-400">${ord.customerName} <span class="font-normal text-slate-300">(${ord.orderType} Meja ${ord.tableNum})</span></p>
+                            <p class="text-[11px] text-slate-400">Bayar: <strong>${ord.paymentMethod || 'Tunai'}</strong></p>
+                            ${proofBtnHtml}
+                            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50 space-y-1">${itemsHtml}</div>
+                        </div>
+
+                        <div class="space-y-2 pt-2 border-t border-slate-700">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span>Total:</span>
+                                <span class="text-emerald-400">Rp ${ord.totalAmount.toLocaleString('id-ID')}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="updateStatus('${ord.orderId}', 'Diproses')" class="py-2 bg-blue-600 text-white rounded-xl text-xs font-bold">🍳 Diproses</button>
+                                <button onclick="updateStatus('${ord.orderId}', 'Selesai')" class="py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">✅ Selesai</button>
+                                <button onclick="printOrderReceipt('${ord.orderId}')" class="py-2 bg-slate-700 text-white rounded-xl text-xs font-bold col-span-2 flex items-center justify-center gap-1.5 border border-slate-600"><i class="fa-solid fa-print"></i> Cetak Struk</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function viewProofModal(url) {
+            currentActiveProofUrl = url;
+            document.getElementById('modal-proof-img').src = url;
+            document.getElementById('proof-image-modal').classList.remove('hidden');
+        }
+
+        function openFullImageInNewTab() {
+            if (!currentActiveProofUrl) return;
+            if (currentActiveProofUrl.startsWith('data:image')) {
+                const w = window.open();
+                if (w) {
+                    w.document.write(`<body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;"><img src="${currentActiveProofUrl}" style="max-width:100%; max-height:100vh; object-contain:contain;"></body>`);
+                }
+            } else {
+                window.open(currentActiveProofUrl, '_blank');
+            }
+        }
+
+        function closeProofModal() {
+            document.getElementById('proof-image-modal').classList.add('hidden');
+        }
+
+        function switchTab(tab) {
+            if (tab === 'orders') {
+                document.getElementById('view-orders').classList.remove('hidden');
+                document.getElementById('view-admin').classList.add('hidden');
+                document.getElementById('tab-btn-orders').className = "px-3.5 py-2 bg-slate-700 text-white rounded-xl text-xs font-bold";
+                document.getElementById('tab-btn-admin').className = "px-3.5 py-2 bg-slate-800 text-slate-400 rounded-xl text-xs font-bold hover:text-white";
+            } else {
+                document.getElementById('view-orders').classList.add('hidden');
+                document.getElementById('view-admin').classList.remove('hidden');
+                document.getElementById('tab-btn-admin').className = "px-3.5 py-2 bg-slate-700 text-white rounded-xl text-xs font-bold";
+                document.getElementById('tab-btn-orders').className = "px-3.5 py-2 bg-slate-800 text-slate-400 rounded-xl text-xs font-bold hover:text-white";
+            }
+        }
+
+        function calculateStatistics() {
+            const todayStr = new Date().toLocaleDateString('id-ID');
+            const now = Date.now();
+            const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+            const selectedCat = document.getElementById('stat-top-category-filter')?.value || "Semua";
+
+            let todayBuyersCount = 0;
+            let todayIncomeSum = 0;
+            let itemSalesCounter = {};
+
+            cashierOrders.forEach(ord => {
+                const isToday = ord.time && ord.time.includes(todayStr);
+                const isWithin7Days = ord.timestamp && ord.timestamp >= sevenDaysAgo;
+
+                if (isToday) {
+                    todayBuyersCount++;
+                    if (ord.status === 'Selesai') todayIncomeSum += (ord.totalAmount || 0);
+                }
+
+                if (isWithin7Days && ord.items) {
+                    ord.items.forEach(i => {
+                        const m = menuItems.find(x => String(x.id) === String(i.id));
+                        if (m) {
+                            if (selectedCat === "Semua" || m.category === selectedCat) {
+                                itemSalesCounter[i.id] = (itemSalesCounter[i.id] || 0) + i.qty;
+                            }
+                        }
+                    });
+                }
+            });
+
+            let topItemId = null;
+            let maxQty = 0;
+            for (let id in itemSalesCounter) {
+                if (itemSalesCounter[id] > maxQty) { maxQty = itemSalesCounter[id]; topItemId = id; }
+            }
+
+            const topMenuItem = menuItems.find(m => String(m.id) === String(topItemId));
+            const topMenuName = topMenuItem ? `${topMenuItem.name} (${maxQty}x)` : "Belum ada data";
+
+            document.getElementById('stat-buyers-today').innerText = `${todayBuyersCount} Orang`;
+            document.getElementById('stat-income-today').innerText = `Rp ${todayIncomeSum.toLocaleString('id-ID')}`;
+            document.getElementById('stat-top-menu').innerText = topMenuName;
+        }
+
+        // FUNGSI CETAK STRUK PROFESSIONAL ALA MIE GACOAN
+        function printOrderReceipt(orderId) {
+            const ord = cashierOrders.find(o => String(o.orderId) === String(orderId));
+            if (!ord) return;
+
+            // Cetak Logo jika diset oleh Owner
+            const logoContainer = document.getElementById('receipt-logo-container');
+            if (appConfig.logoUrl) {
+                logoContainer.innerHTML = `<img src="${appConfig.logoUrl}" style="max-height: 40px; margin: 0 auto; display: block;">`;
+            } else {
+                logoContainer.innerHTML = '';
+            }
+
+            document.getElementById('receipt-resto-name').innerText = restoName;
+            document.getElementById('receipt-date').innerText = ord.time;
+            document.getElementById('receipt-customer').innerText = `${ord.customerName} ${ord.tableNum !== '-' ? '(Meja ' + ord.tableNum + ')' : ''}`;
+            document.getElementById('receipt-type').innerText = ord.orderType.toUpperCase();
+            document.getElementById('receipt-payment-method').innerText = ord.paymentMethod || 'Tunai';
+
+            let totalItemsCount = 0;
+            const itemsContainer = document.getElementById('receipt-items-list');
+            itemsContainer.innerHTML = ord.items.map(i => {
+                const m = menuItems.find(x => String(x.id) === String(i.id));
+                const name = m ? m.name : 'Item';
+                const price = m ? m.price : 0;
+                totalItemsCount += i.qty;
+                
+                return `
+                    <div style="margin-bottom: 2px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="width: 15%;">${i.qty}</span>
+                            <span style="width: 55%; text-transform: uppercase;">${name}</span>
+                            <span style="width: 30%; text-align: right;">${(price * i.qty).toLocaleString('id-ID')}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('') + `<div style="margin-top: 4px; font-weight: bold;">${totalItemsCount} items</div>`;
+
+            document.getElementById('receipt-subtotal-amount').innerText = `Rp ${ord.totalAmount.toLocaleString('id-ID')}`;
+            document.getElementById('receipt-grand-total').innerText = `Rp ${ord.totalAmount.toLocaleString('id-ID')}`;
+
+            setTimeout(() => { window.print(); }, 100);
+        }
+
+        async function updateStatus(orderId, newStatus) {
+            const idx = cashierOrders.findIndex(o => String(o.orderId) === String(orderId));
+            if (idx !== -1) {
+                cashierOrders[idx].status = newStatus;
+                await window.setDoc(window.doc(window.db, "restaurant", "liveOrders"), { ordersList: cashierOrders });
+            }
+        }
+
+        async function clearFinishedOrders() {
+            if (confirm("Bersihkan pesanan yang sudah selesai dari antrean?")) {
+                cashierOrders = cashierOrders.filter(o => o.status !== 'Selesai');
+                await window.setDoc(window.doc(window.db, "restaurant", "liveOrders"), { ordersList: cashierOrders });
+            }
+        }
+
+        function renderAdminMenuList() {
+            const container = document.getElementById('admin-menu-list');
+            if (!container) return;
+            container.innerHTML = menuItems.map(item => `
+                <div class="py-2.5 flex justify-between items-center text-xs">
+                    <div>
+                        <p class="font-bold text-white">${item.name} <span class="text-amber-400 font-normal">(${item.category})</span></p>
+                        <p class="text-slate-400">Rp ${item.price.toLocaleString('id-ID')}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editMenu(${item.id})" class="px-2.5 py-1 bg-amber-500/20 text-amber-400 rounded-lg font-bold">Edit</button>
+                        <button onclick="deleteMenu(${item.id})" class="px-2.5 py-1 bg-rose-500/20 text-rose-400 rounded-lg font-bold">Hapus</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function saveMenuItem() {
+            const editId = document.getElementById('edit-item-id').value;
+            const name = document.getElementById('menu-name').value.trim();
+            const category = document.getElementById('menu-category').value;
+            const price = parseInt(document.getElementById('menu-price').value);
+            const desc = document.getElementById('menu-desc').value.trim();
+            let img = document.getElementById('menu-img').value.trim() || 'https://placehold.co/600x400?text=Menu';
+
+            if (!name || isNaN(price)) { alert("Isi Nama & Harga!"); return; }
+
+            if (editId) {
+                const idx = menuItems.findIndex(i => String(i.id) === String(editId));
+                if (idx !== -1) menuItems[idx] = { id: Number(editId), name, category, price, description: desc, image: img };
+            } else {
+                menuItems.push({ id: Date.now(), name, category, price, description: desc, image: img });
+            }
+
+            await window.setDoc(window.doc(window.db, "restaurant", "appData"), {
+                config: appConfig,
+                items: menuItems
+            });
+
+            resetMenuForm();
+            alert("Menu berhasil disimpan!");
+        }
+
+        function editMenu(id) {
+            const item = menuItems.find(i => String(i.id) === String(id));
+            if (!item) return;
+            document.getElementById('edit-item-id').value = item.id;
+            document.getElementById('menu-name').value = item.name;
+            document.getElementById('menu-category').value = item.category;
+            document.getElementById('menu-price').value = item.price;
+            document.getElementById('menu-desc').value = item.description || '';
+            document.getElementById('menu-img').value = item.image || '';
+
+            document.getElementById('form-menu-title').innerText = "Edit Menu: " + item.name;
+            document.getElementById('btn-save-menu').innerText = "Simpan Perubahan";
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        }
+
+        function resetMenuForm() {
+            document.getElementById('edit-item-id').value = '';
+            document.getElementById('menu-name').value = '';
+            document.getElementById('menu-price').value = '';
+            document.getElementById('menu-desc').value = '';
+            document.getElementById('menu-img').value = '';
+
+            document.getElementById('form-menu-title').innerText = "Tambah Menu Baru";
+            document.getElementById('btn-save-menu').innerText = "+ Tambahkan Menu";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function deleteMenu(id) {
+            if (confirm("Hapus menu ini?")) {
+                menuItems = menuItems.filter(i => String(i.id) !== String(id));
+                await window.setDoc(window.doc(window.db, "restaurant", "appData"), {
+                    config: appConfig,
+                    items: menuItems
+                });
+            }
+        }
+    </script>
+</body>
+</html>
