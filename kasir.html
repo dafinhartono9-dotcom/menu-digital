@@ -123,36 +123,107 @@
             </div>
         </header>
 
-        <section class="max-w-7xl mx-auto my-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg flex items-center gap-4">
-                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-users"></i></div>
-                <div><p class="text-xs text-slate-400 font-semibold">Pembeli Hari Ini</p><h3 class="text-2xl font-extrabold text-white" id="stat-buyers-today">0 Orang</h3></div>
-            </div>
-            
-            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg flex items-center gap-4">
-                <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-wallet"></i></div>
-                <div><p class="text-xs text-slate-400 font-semibold">Pendapatan Hari Ini</p><h3 class="text-2xl font-extrabold text-emerald-400" id="stat-income-today">Rp 0</h3></div>
+        <!-- KARTU STATISTIK & KALENDER HISTORI -->
+        <section class="max-w-7xl mx-auto my-6 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- KARTU PEMBELI DENGAN FILTER PERIODE -->
+                <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center text-sm font-bold"><i class="fa-solid fa-users"></i></div>
+                            <p class="text-xs text-slate-400 font-semibold">Pembeli</p>
+                        </div>
+                        <select id="stat-buyers-period-filter" onchange="calculateStatistics()" class="bg-slate-900 text-blue-400 border border-slate-700 rounded-lg px-2 py-1 text-[11px] font-bold outline-none">
+                            <option value="today">Hari Ini</option>
+                            <option value="yesterday">Kemarin</option>
+                            <option value="this_week">Minggu Ini</option>
+                            <option value="this_month">Bulan Ini</option>
+                            <option value="this_year">1 Tahun</option>
+                        </select>
+                    </div>
+                    <h3 class="text-2xl font-extrabold text-white truncate pt-1" id="stat-buyers-count">0 Orang</h3>
+                </div>
+                
+                <!-- KARTU PENDAPATAN DENGAN FILTER PERIODE -->
+                <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-emerald-500/20 text-emerald-400 rounded-lg flex items-center justify-center text-sm font-bold"><i class="fa-solid fa-wallet"></i></div>
+                            <p class="text-xs text-slate-400 font-semibold">Pendapatan</p>
+                        </div>
+                        <select id="stat-income-period-filter" onchange="calculateStatistics()" class="bg-slate-900 text-emerald-400 border border-slate-700 rounded-lg px-2 py-1 text-[11px] font-bold outline-none">
+                            <option value="today">Hari Ini</option>
+                            <option value="yesterday">Kemarin</option>
+                            <option value="this_week">Minggu Ini</option>
+                            <option value="this_month">Bulan Ini</option>
+                            <option value="this_year">1 Tahun</option>
+                        </select>
+                    </div>
+                    <h3 class="text-2xl font-extrabold text-emerald-400 truncate pt-1" id="stat-income-amount">Rp 0</h3>
+                </div>
+
+                <!-- KARTU MENU TERLARIS DENGAN DUA FILTER -->
+                <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-amber-500/20 text-amber-400 rounded-lg flex items-center justify-center text-sm font-bold"><i class="fa-solid fa-fire"></i></div>
+                            <p class="text-xs text-slate-400 font-semibold">Terlaris</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <select id="stat-top-period-filter" onchange="calculateStatistics()" class="bg-slate-900 text-amber-400 border border-slate-700 rounded-lg px-2 py-1 text-[11px] font-bold outline-none">
+                                <option value="7_days">7 Hari</option>
+                                <option value="30_days">1 Bulan</option>
+                            </select>
+                            <select id="stat-top-category-filter" onchange="calculateStatistics()" class="bg-slate-900 text-amber-400 border border-slate-700 rounded-lg px-2 py-1 text-[11px] font-bold outline-none">
+                                <option value="Semua">Semua Kategori</option>
+                                <option value="Makanan Utama">Makanan Utama</option>
+                                <option value="Camilan">Camilan</option>
+                                <option value="Minuman">Minuman</option>
+                                <option value="Dessert">Dessert</option>
+                            </select>
+                        </div>
+                    </div>
+                    <h3 class="text-base font-extrabold text-amber-400 truncate pt-1" id="stat-top-menu">-</h3>
+                </div>
             </div>
 
-            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg space-y-2">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 bg-amber-500/20 text-amber-400 rounded-lg flex items-center justify-center text-sm font-bold"><i class="fa-solid fa-fire"></i></div>
-                        <p class="text-xs text-slate-400 font-semibold">Terlaris (7 Hari)</p>
+            <!-- MODUL KALENDER CEK TANGGAL SPESIFIK -->
+            <div class="bg-slate-800/90 p-4 rounded-2xl border border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-calendar-days"></i>
                     </div>
-                    <select id="stat-top-category-filter" onchange="calculateStatistics()" class="bg-slate-900 text-amber-400 border border-slate-700 rounded-lg px-2 py-1 text-[11px] font-bold outline-none">
-                        <option value="Semua">Semua Kategori</option>
-                        <option value="Makanan Utama">Makanan Utama</option>
-                        <option value="Camilan">Camilan</option>
-                        <option value="Minuman">Minuman</option>
-                        <option value="Dessert">Dessert</option>
-                    </select>
+                    <div>
+                        <h4 class="font-bold text-xs text-white">Cek Histori per Tanggal Spesifik</h4>
+                        <p class="text-[11px] text-slate-400">Pilih tanggal di kalender untuk melihat laporan pendapatan & pengunjung pada tanggal tersebut.</p>
+                    </div>
                 </div>
-                <h3 class="text-base font-extrabold text-amber-400 truncate pt-1" id="stat-top-menu">-</h3>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="date" id="calendar-date-input" onchange="checkCustomDateHistory()" class="bg-slate-900 border border-slate-700 text-amber-400 text-xs font-bold px-3 py-2 rounded-xl outline-none w-full sm:w-auto">
+                    <button onclick="resetCustomDateHistory()" id="btn-reset-date" class="hidden px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-bold transition">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- RESULT HASIL CEK TANGGAL SPESIFIK -->
+            <div id="custom-date-result-box" class="hidden bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex flex-wrap justify-around items-center gap-4 text-center">
+                <div>
+                    <span class="text-[11px] text-slate-400 font-semibold block">Tanggal Dipilih:</span>
+                    <strong id="res-date-label" class="text-sm text-amber-400 font-extrabold">-</strong>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 font-semibold block">Jumlah Pembeli:</span>
+                    <strong id="res-buyers-label" class="text-base text-white font-extrabold">0 Orang</strong>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 font-semibold block">Total Pendapatan:</span>
+                    <strong id="res-income-label" class="text-base text-emerald-400 font-extrabold">Rp 0</strong>
+                </div>
             </div>
         </section>
 
-        <main id="view-orders" class="max-w-7xl mx-auto space-y-4">
+        <main id="view-orders" class="max-w-7xl mx-auto space-y-6">
             <div class="flex justify-between items-center">
                 <h2 class="font-bold text-base text-white flex items-center gap-2">
                     <i class="fa-solid fa-list-check text-amber-500"></i> Antrean Pesanan Masuk
@@ -161,7 +232,9 @@
                     Bersihkan Status Selesai
                 </button>
             </div>
-            <div id="cashier-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            
+            <!-- CONTAINER UTAMA UNTUK DAFTAR PESANAN BERSEKAT -->
+            <div id="cashier-orders-grouped-container" class="space-y-8"></div>
         </main>
 
         <main id="view-admin" class="max-w-7xl mx-auto space-y-6 hidden">
@@ -208,7 +281,7 @@
         </main>
     </div>
 
-    <!-- CONTAINER STRUK PRINTER THERMAL 58MM ALA STRUK MIE GACOAN -->
+    <!-- CONTAINER STRUK PRINTER THERMAL 58MM -->
     <div id="printable-receipt" class="hidden">
         <div style="text-align: center; margin-bottom: 6px;">
             <div id="receipt-logo-container" style="margin-bottom: 4px;"></div>
@@ -343,58 +416,132 @@
             });
         }
 
+        // FUNGSI RENDER PESANAN DENGAN SEKAT PER TANGGAL (PENGELOMPOKAN TANGGAL YANG DIPERKUAT)
         function renderOrders() {
-            const grid = document.getElementById('cashier-orders-grid');
+            const container = document.getElementById('cashier-orders-grouped-container');
             if (cashierOrders.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-center py-12 text-slate-500">Belum ada pesanan masuk.</p>`;
+                container.innerHTML = `<p class="text-center py-12 text-slate-500">Belum ada pesanan masuk.</p>`;
                 return;
             }
 
-            grid.innerHTML = cashierOrders.map(ord => {
-                let statusBadge = `<span class="bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded-full text-[10px]">⏳ Pending</span>`;
-                if (ord.status === 'Diproses') statusBadge = `<span class="bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full text-[10px]">🍳 Diproses</span>`;
-                else if (ord.status === 'Selesai') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full text-[10px]">✅ Selesai</span>`;
+            const groupedOrders = {};
 
-                let itemsHtml = ord.items.map(i => {
-                    const m = menuItems.find(x => String(x.id) === String(i.id));
-                    return `<div class="flex justify-between text-xs"><span>${m ? m.name : 'Item'} (x${i.qty})</span><span class="font-bold">Rp ${((m ? m.price : 0) * i.qty).toLocaleString('id-ID')}</span></div>`;
-                }).join('');
+            cashierOrders.forEach(ord => {
+                let dateKey = "";
 
-                let proofBtnHtml = '';
-                if (ord.paymentProofUrl) {
-                    proofBtnHtml = `
-                        <button onclick="viewProofModal('${ord.paymentProofUrl}')" class="py-1.5 px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 w-full">
-                            <i class="fa-solid fa-camera"></i> 📷 Lihat Bukti Bayar
-                        </button>
-                    `;
+                // Ekstrak string tanggal dari timestamp atau properti time
+                if (ord.timestamp) {
+                    const d = new Date(ord.timestamp);
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    dateKey = `${day}/${month}/${year}`;
+                } else if (ord.time) {
+                    const cleanTime = ord.time.trim();
+                    if (cleanTime.includes(' ')) {
+                        dateKey = cleanTime.split(' ')[0]; // Ambil DD/MM/YYYY
+                    } else {
+                        dateKey = cleanTime;
+                    }
+                } else {
+                    dateKey = "Lainnya";
                 }
 
-                return `
-                    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col justify-between space-y-3">
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-start border-b border-slate-700 pb-2">
-                                <div>
-                                    <span class="font-extrabold text-white text-xs">#${ord.orderId}</span>
-                                    <p class="text-[10px] text-slate-400">${ord.time}</p>
+                if (!groupedOrders[dateKey]) {
+                    groupedOrders[dateKey] = [];
+                }
+                groupedOrders[dateKey].push(ord);
+            });
+
+            // Urutkan tanggal dari yang paling baru ke paling lama
+            const sortedDates = Object.keys(groupedOrders).sort((a, b) => {
+                const parseDate = (dStr) => {
+                    const p = dStr.split('/');
+                    if (p.length === 3) return new Date(p[2], p[1] - 1, p[0]).getTime();
+                    return 0;
+                };
+                return parseDate(b) - parseDate(a);
+            });
+
+            // Render Banner Tanggal + Grid Kartu
+            container.innerHTML = sortedDates.map(dateStr => {
+                const ordersInDate = groupedOrders[dateStr];
+
+                let formattedHeaderDate = dateStr;
+                const p = dateStr.split('/');
+                if (p.length === 3) {
+                    const dObj = new Date(p[2], p[1] - 1, p[0]);
+                    if (!isNaN(dObj.getTime())) {
+                        formattedHeaderDate = dObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                    }
+                }
+
+                const cardsHtml = ordersInDate.map(ord => {
+                    let statusBadge = `<span class="bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded-full text-[10px]">⏳ Pending</span>`;
+                    if (ord.status === 'Diproses') statusBadge = `<span class="bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full text-[10px]">🍳 Diproses</span>`;
+                    else if (ord.status === 'Selesai') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full text-[10px]">✅ Selesai</span>`;
+
+                    let itemsHtml = ord.items.map(i => {
+                        const m = menuItems.find(x => String(x.id) === String(i.id));
+                        return `<div class="flex justify-between text-xs"><span>${m ? m.name : 'Item'} (x${i.qty})</span><span class="font-bold">Rp ${((m ? m.price : 0) * i.qty).toLocaleString('id-ID')}</span></div>`;
+                    }).join('');
+
+                    let proofBtnHtml = '';
+                    if (ord.paymentProofUrl) {
+                        proofBtnHtml = `
+                            <button onclick="viewProofModal('${ord.paymentProofUrl}')" class="py-1.5 px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 w-full">
+                                <i class="fa-solid fa-camera"></i> 📷 Lihat Bukti Bayar
+                            </button>
+                        `;
+                    }
+
+                    return `
+                        <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col justify-between space-y-3 shadow-md">
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-start border-b border-slate-700 pb-2">
+                                    <div>
+                                        <span class="font-extrabold text-white text-xs">#${ord.orderId}</span>
+                                        <p class="text-[10px] text-slate-400">${ord.time}</p>
+                                    </div>
+                                    ${statusBadge}
                                 </div>
-                                ${statusBadge}
+                                <p class="text-xs font-bold text-amber-400">${ord.customerName} <span class="font-normal text-slate-300">(${ord.orderType} Meja ${ord.tableNum})</span></p>
+                                <p class="text-[11px] text-slate-400">Bayar: <strong>${ord.paymentMethod || 'Tunai'}</strong></p>
+                                ${proofBtnHtml}
+                                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50 space-y-1">${itemsHtml}</div>
                             </div>
-                            <p class="text-xs font-bold text-amber-400">${ord.customerName} <span class="font-normal text-slate-300">(${ord.orderType} Meja ${ord.tableNum})</span></p>
-                            <p class="text-[11px] text-slate-400">Bayar: <strong>${ord.paymentMethod || 'Tunai'}</strong></p>
-                            ${proofBtnHtml}
-                            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50 space-y-1">${itemsHtml}</div>
+
+                            <div class="space-y-2 pt-2 border-t border-slate-700">
+                                <div class="flex justify-between text-xs font-bold">
+                                    <span>Total:</span>
+                                    <span class="text-emerald-400">Rp ${ord.totalAmount.toLocaleString('id-ID')}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="updateStatus('${ord.orderId}', 'Diproses')" class="py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition">🍳 Diproses</button>
+                                    <button onclick="updateStatus('${ord.orderId}', 'Selesai')" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition">✅ Selesai</button>
+                                    <button onclick="printOrderReceipt('${ord.orderId}')" class="py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold col-span-2 flex items-center justify-center gap-1.5 border border-slate-600 transition"><i class="fa-solid fa-print"></i> Cetak Struk</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="space-y-3">
+                        <!-- BANNER SEKAT TANGGAL -->
+                        <div class="flex items-center gap-3 bg-slate-800/90 border border-amber-500/30 px-4 py-2.5 rounded-2xl shadow">
+                            <i class="fa-solid fa-calendar-day text-amber-400 text-base"></i>
+                            <h3 class="font-extrabold text-sm md:text-base text-amber-400">
+                                Penjualan Tanggal ${formattedHeaderDate}
+                            </h3>
+                            <span class="ml-auto text-xs bg-slate-900 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 font-bold">
+                                ${ordersInDate.length} Pesanan
+                            </span>
                         </div>
 
-                        <div class="space-y-2 pt-2 border-t border-slate-700">
-                            <div class="flex justify-between text-xs font-bold">
-                                <span>Total:</span>
-                                <span class="text-emerald-400">Rp ${ord.totalAmount.toLocaleString('id-ID')}</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="updateStatus('${ord.orderId}', 'Diproses')" class="py-2 bg-blue-600 text-white rounded-xl text-xs font-bold">🍳 Diproses</button>
-                                <button onclick="updateStatus('${ord.orderId}', 'Selesai')" class="py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">✅ Selesai</button>
-                                <button onclick="printOrderReceipt('${ord.orderId}')" class="py-2 bg-slate-700 text-white rounded-xl text-xs font-bold col-span-2 flex items-center justify-center gap-1.5 border border-slate-600"><i class="fa-solid fa-print"></i> Cetak Struk</button>
-                            </div>
+                        <!-- GRID PESANAN UNTUK TANGGAL TERSEBUT -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${cardsHtml}
                         </div>
                     </div>
                 `;
@@ -438,31 +585,74 @@
         }
 
         function calculateStatistics() {
-            const todayStr = new Date().toLocaleDateString('id-ID');
-            const now = Date.now();
-            const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+            const now = new Date();
+            const todayStr = now.toLocaleDateString('id-ID');
+            
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const yesterdayStr = yesterday.toLocaleDateString('id-ID');
+
+            const nowMs = Date.now();
+            
+            const selectedTopPeriod = document.getElementById('stat-top-period-filter')?.value || "7_days";
+            const daysLimitMs = (selectedTopPeriod === "30_days" ? 30 : 7) * 24 * 60 * 60 * 1000;
+            const topTimeThreshold = nowMs - daysLimitMs;
+            
+            const selectedIncomePeriod = document.getElementById('stat-income-period-filter')?.value || "today";
+            const selectedBuyersPeriod = document.getElementById('stat-buyers-period-filter')?.value || "today";
             const selectedCat = document.getElementById('stat-top-category-filter')?.value || "Semua";
 
-            let todayBuyersCount = 0;
-            let todayIncomeSum = 0;
+            let buyersSum = 0;
+            let incomeSum = 0;
             let itemSalesCounter = {};
 
             cashierOrders.forEach(ord => {
                 const isToday = ord.time && ord.time.includes(todayStr);
-                const isWithin7Days = ord.timestamp && ord.timestamp >= sevenDaysAgo;
+                const isYesterday = ord.time && ord.time.includes(yesterdayStr);
 
-                if (isToday) {
-                    todayBuyersCount++;
-                    if (ord.status === 'Selesai') todayIncomeSum += (ord.totalAmount || 0);
+                let matchBuyerPeriod = false;
+                if (selectedBuyersPeriod === 'today' && isToday) matchBuyerPeriod = true;
+                else if (selectedBuyersPeriod === 'yesterday' && isYesterday) matchBuyerPeriod = true;
+                else if (selectedBuyersPeriod === 'this_week' && ord.timestamp) {
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setHours(0, 0, 0, 0);
+                    startOfWeek.setDate(now.getDate() - now.getDay());
+                    if (ord.timestamp >= startOfWeek.getTime()) matchBuyerPeriod = true;
+                } else if (selectedBuyersPeriod === 'this_month' && ord.timestamp) {
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+                    if (ord.timestamp >= startOfMonth) matchBuyerPeriod = true;
+                } else if (selectedBuyersPeriod === 'this_year' && ord.timestamp) {
+                    const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+                    if (ord.timestamp >= startOfYear) matchBuyerPeriod = true;
                 }
 
-                if (isWithin7Days && ord.items) {
+                if (matchBuyerPeriod) buyersSum++;
+
+                if (ord.status === 'Selesai') {
+                    let matchIncomePeriod = false;
+                    if (selectedIncomePeriod === 'today' && isToday) matchIncomePeriod = true;
+                    else if (selectedIncomePeriod === 'yesterday' && isYesterday) matchIncomePeriod = true;
+                    else if (selectedIncomePeriod === 'this_week' && ord.timestamp) {
+                        const startOfWeek = new Date(now);
+                        startOfWeek.setHours(0, 0, 0, 0);
+                        startOfWeek.setDate(now.getDate() - now.getDay());
+                        if (ord.timestamp >= startOfWeek.getTime()) matchIncomePeriod = true;
+                    } else if (selectedIncomePeriod === 'this_month' && ord.timestamp) {
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+                        if (ord.timestamp >= startOfMonth) matchIncomePeriod = true;
+                    } else if (selectedIncomePeriod === 'this_year' && ord.timestamp) {
+                        const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+                        if (ord.timestamp >= startOfYear) matchIncomePeriod = true;
+                    }
+
+                    if (matchIncomePeriod) incomeSum += (ord.totalAmount || 0);
+                }
+
+                if (ord.timestamp && ord.timestamp >= topTimeThreshold && ord.items) {
                     ord.items.forEach(i => {
                         const m = menuItems.find(x => String(x.id) === String(i.id));
-                        if (m) {
-                            if (selectedCat === "Semua" || m.category === selectedCat) {
-                                itemSalesCounter[i.id] = (itemSalesCounter[i.id] || 0) + i.qty;
-                            }
+                        if (m && (selectedCat === "Semua" || m.category === selectedCat)) {
+                            itemSalesCounter[i.id] = (itemSalesCounter[i.id] || 0) + i.qty;
                         }
                     });
                 }
@@ -477,17 +667,67 @@
             const topMenuItem = menuItems.find(m => String(m.id) === String(topItemId));
             const topMenuName = topMenuItem ? `${topMenuItem.name} (${maxQty}x)` : "Belum ada data";
 
-            document.getElementById('stat-buyers-today').innerText = `${todayBuyersCount} Orang`;
-            document.getElementById('stat-income-today').innerText = `Rp ${todayIncomeSum.toLocaleString('id-ID')}`;
+            document.getElementById('stat-buyers-count').innerText = `${buyersSum} Orang`;
+            document.getElementById('stat-income-amount').innerText = `Rp ${incomeSum.toLocaleString('id-ID')}`;
             document.getElementById('stat-top-menu').innerText = topMenuName;
         }
 
-        // FUNGSI CETAK STRUK PROFESSIONAL ALA MIE GACOAN
+        function checkCustomDateHistory() {
+            const dateInput = document.getElementById('calendar-date-input').value;
+            if (!dateInput) return;
+
+            const parts = dateInput.split('-');
+            if (parts.length !== 3) return;
+            const targetDay = parseInt(parts[2], 10);
+            const targetMonth = parseInt(parts[1], 10);
+            const targetYear = parseInt(parts[0], 10);
+
+            const targetFormattedStr = `${targetDay.toString().padStart(2, '0')}/${targetMonth.toString().padStart(2, '0')}/${targetYear}`;
+
+            let customBuyers = 0;
+            let customIncome = 0;
+
+            cashierOrders.forEach(ord => {
+                let isMatchDate = false;
+                
+                if (ord.timestamp) {
+                    const d = new Date(ord.timestamp);
+                    if (d.getDate() === targetDay && (d.getMonth() + 1) === targetMonth && d.getFullYear() === targetYear) {
+                        isMatchDate = true;
+                    }
+                } else if (ord.time && ord.time.includes(targetFormattedStr)) {
+                    isMatchDate = true;
+                }
+
+                if (isMatchDate) {
+                    customBuyers++;
+                    if (ord.status === 'Selesai') {
+                        customIncome += (ord.totalAmount || 0);
+                    }
+                }
+            });
+
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            const dateObj = new Date(targetYear, targetMonth - 1, targetDay);
+            
+            document.getElementById('res-date-label').innerText = dateObj.toLocaleDateString('id-ID', options);
+            document.getElementById('res-buyers-label').innerText = `${customBuyers} Orang`;
+            document.getElementById('res-income-label').innerText = `Rp ${customIncome.toLocaleString('id-ID')}`;
+            
+            document.getElementById('custom-date-result-box').classList.remove('hidden');
+            document.getElementById('btn-reset-date').classList.remove('hidden');
+        }
+
+        function resetCustomDateHistory() {
+            document.getElementById('calendar-date-input').value = '';
+            document.getElementById('custom-date-result-box').classList.add('hidden');
+            document.getElementById('btn-reset-date').classList.add('hidden');
+        }
+
         function printOrderReceipt(orderId) {
             const ord = cashierOrders.find(o => String(o.orderId) === String(orderId));
             if (!ord) return;
 
-            // Cetak Logo jika diset oleh Owner
             const logoContainer = document.getElementById('receipt-logo-container');
             if (appConfig.logoUrl) {
                 logoContainer.innerHTML = `<img src="${appConfig.logoUrl}" style="max-height: 40px; margin: 0 auto; display: block;">`;
